@@ -30,3 +30,4 @@ This project demonstrates how Remote Access Tools (RATs) are built and how they 
    ```bash
    git clone https://github.com/dev-joshua-py/RAT-Builder.git
    cd RAT-Builder
+3. Run ```bash python builder.py
