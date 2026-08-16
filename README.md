@@ -15,7 +15,9 @@ This project demonstrates how Remote Access Tools (RATs) are built and how they 
 - **Defenders** learning to detect and analyze malicious traffic.
 - **Educators** teaching cybersecurity concepts in a controlled environment.
 
-**The builder generates a Python‑based RAT client that uses Telegram as its C2 channel.** This is a common technique used by malware; understanding it helps defenders build better detection.
+The builder generates a Python‑based RAT client that uses **Telegram** as its C2 channel – a technique commonly used by real malware. Understanding this helps defenders build better detection and prevention mechanisms.
+
+---
 
 ## 🚫 What this is NOT
 
@@ -23,11 +25,18 @@ This project demonstrates how Remote Access Tools (RATs) are built and how they 
 - A ready‑to‑deploy weapon (you must configure and build it yourself).
 - A stealth or evasion toolkit (no anti‑virus bypass, no obfuscation, no persistence beyond standard Windows services).
 
-## 🛠️ Building from Source
+---
 
-1. Install **Python 3.11+** and `pip`.
-2. Clone this repository:
-   ```bash
-   git clone https://github.com/dev-joshua-py/RAT-Builder.git
-   cd RAT-Builder
-3. Run ```bash python builder.py
+## 🛠️ Prerequisites
+
+Before you begin, make sure you have:
+
+- **Windows 10/11** (the generated client is Windows‑only).
+- **Python 3.11 or higher** – download from [python.org](https://www.python.org/downloads/).  
+  During installation, **check** the box that says “Add Python to PATH”.
+- **Git** (optional) – if you want to clone the repository. Otherwise you can download the ZIP.
+
+Verify your installation by opening a Command Prompt and typing:
+```cmd
+python --version
+pip --version
